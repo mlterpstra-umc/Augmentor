@@ -11,10 +11,10 @@ error, more reproducible, more efficient, and easier to perform.
 
 """
 
-from .Pipeline import Pipeline, DataFramePipeline, DataPipeline
+from .Pipeline import Pipeline, DataFramePipeline, DataPipeline, MultiOpDataPipeline
 
 __author__ = """Marcus D. Bloice"""
 __email__ = 'marcus.bloice@medunigraz.at'
 __version__ = '0.2.3'
 
-__all__ = ['Pipeline', 'DataFramePipeline', 'DataPipeline']
+__all__ = ['Pipeline', 'DataFramePipeline', 'DataPipeline', 'MultiOpDataPipeline']

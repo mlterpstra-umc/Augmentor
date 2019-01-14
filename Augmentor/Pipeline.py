@@ -1914,3 +1914,182 @@ class DataPipeline(Pipeline):
             return batch, y
         else:
             return batch
+
+class MultiOpDataPipeline(Pipeline):
+    """
+    The MultiOpDataPipeline used to create augmented data that is not read from or
+    saved to the hard disk. The class is provides beta functionality and will
+    be incorporated into the standard Pipeline class at a later date.
+
+    Its main purpose is to provide functionality for augmenting images
+    that have multiple masks.
+
+    It differes from the DataPipeline in that you applies different operations to every image.
+
+    See https://github.com/mdbloice/Augmentor/blob/master/notebooks/Multiple-Mask-Augmentation.ipynb
+    for example usage.
+
+    DataPipeline objects are initialised by passing images and their
+    corresponding masks (grouped as lists) along with an optional list of
+    labels. If labels are provided, the augmented images and its corresponding
+    label are returned, otherwise only the images are returned. Image data
+    is returned in array format.
+
+    The images and masks that are passed can be of differing formats and
+    have differing numbers of channels. For example, the ground truth data
+    can be 3 channel RGB, while its mask images can be 1 channel monochrome.
+    """
+
+    def __init__(self, images, labels=None):
+
+        # We will not use this member variable for now.
+        # if output_directory:
+        #    self.output_directory = output_directory
+        # else:
+        #    self.output_directory = None
+
+        self.augmentor_images = images
+        self.labels = labels
+
+        self.operations = []
+
+    ####################################################################################################################
+    # Properties
+    ####################################################################################################################
+
+    # @property
+    # def output_directory(self):
+    #     return self._output_directory
+
+    # @output_directory.setter
+    # def output_directory(self, value):
+    #     if os.path.isdir(value):
+    #         self._output_directory = value
+    #     else:
+    #         raise IOError("The provided argument, %s, is not a directory." % value)
+
+    @property
+    def augmentor_images(self):
+        return self._augmentor_images
+
+    @augmentor_images.setter
+    def augmentor_images(self, value):
+            self._augmentor_images = value
+
+    @property
+    def labels(self):
+        return self._labels
+
+    @labels.setter
+    def labels(self, value):
+        self._labels = value
+
+    def add_operation(self, operation):
+        raise NameError("For a MultiOpDataPipeline, use add_operations.")
+
+    def add_operations(self, operations):
+        if len(self.augmentor_images) == 0:
+            raise IndexError("First add images so operations can be done per image.")
+        if not(isinstance(operations, list)):
+            raise ValueError('operations must be an array with Operations of length of number of images.')
+        if len(self.operations) == len(self.augmentor_images[0]):
+            raise IndexError("Number of operations must match the number of images. Pad with None to do a no-op for a certain image.")
+        for i, op in enumerate(operations):
+            if not(isinstance(op, Operation) or op is None):
+                optype = type(op)
+                raise ValueError(f'Operation #{i} must be Operation or None but it is {optype}.')
+
+        self.operations.append(operations)
+    ####################################################################################################################
+    # End Properties
+    ####################################################################################################################
+
+    def __call__(self, augmentor_image):
+        """
+        Multi-threading support to be enabled in a future release.
+        """
+        return self._execute(augmentor_image)
+
+    def generator(self, batch_size=1, yield_originals=False):
+
+        # If the number is 0 or negative, default it to 1
+        batch_size = 1 if (batch_size < 1) else batch_size
+
+        while True:
+
+            batch = []
+            y = []
+            originals = []
+            for _ in range(0, batch_size):
+
+                index = random.randint(0, len(self.augmentor_images) - 1)
+                images_to_yield = [Image.fromarray(x) for x in self.augmentor_images[index]]
+                if yield_originals:
+                    originals.append([np.asarray(x) for x in images_to_yield].copy())
+                for operations in self.operations:
+                    r = round(random.uniform(0, 1), 1)
+                    if r <= operations[0].probability:
+                        for i, op in enumerate(operations):
+                            if op is not None:
+                                images_to_yield[i] = operations[i].perform_operation([images_to_yield[i]])[0]
+
+                images_to_yield = [np.asarray(x) for x in images_to_yield]
+
+                if self.labels:
+                    batch.append(images_to_yield)
+                    y.append(self.labels[index])
+                else:
+                    batch.append(images_to_yield)
+
+            if self.labels:
+                if yield_originals:
+                    yield batch, y, originals
+                else:
+                    yield batch, y
+            else:
+                if yield_originals:
+                    yield batch, originals
+                else:
+                    yield batch
+
+    def sample(self, n, return_originals=False):
+
+        batch = []
+        originals = []
+        y = []
+
+        for _ in range(0, n):
+
+            # We first get a random image(s) and label, because even if
+            # the pipeline does nothing (e.g. the probabilities are very low)
+            # then we return the images as they are, as the user requested.
+            index = random.randint(0, len(self.augmentor_images) - 1)
+            images_to_return = [Image.fromarray(x) for x in self.augmentor_images[index]]
+            if return_originals:
+                originals.append([np.asarray(x) for x in images_to_return].copy())
+
+            for operations in self.operations:
+                r = round(random.uniform(0, 1), 1)
+                if r <= operations[0].probability:
+                    for i, op in enumerate(operations):
+                        if op is not None:
+                            images_to_return[i] = operations[i].perform_operation([images_to_return[i]])[0]
+
+            images_to_return = [np.asarray(x) for x in images_to_return]
+
+            if self.labels:
+                batch.append(images_to_return)
+                y.append(self.labels[index])
+            else:
+                batch.append(images_to_return)
+
+        if self.labels:
+            if return_originals:
+                return batch, y, originals
+            else:
+                return batch, y
+        else:
+            if return_originals:
+                return batch, originals
+            else:
+                return batch
