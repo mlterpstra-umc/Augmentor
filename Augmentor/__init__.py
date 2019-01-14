@@ -12,9 +12,9 @@ error, more reproducible, more efficient, and easier to perform.
 """
 
 from .Pipeline import Pipeline, DataFramePipeline, DataPipeline, MultiOpDataPipeline
-
+from .Operations import Operation
 __author__ = """Marcus D. Bloice"""
 __email__ = 'marcus.bloice@medunigraz.at'
 __version__ = '0.2.3'
 
-__all__ = ['Pipeline', 'DataFramePipeline', 'DataPipeline', 'MultiOpDataPipeline']
+__all__ = ['Operation', 'Pipeline', 'DataFramePipeline', 'DataPipeline', 'MultiOpDataPipeline']
