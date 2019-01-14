@@ -1974,7 +1974,7 @@ class MultiOpDataPipeline(Pipeline):
 
     @augmentor_images.setter
     def augmentor_images(self, value):
-            self._augmentor_images = value
+        self._augmentor_images = value
 
     @property
     def labels(self):
@@ -1990,16 +1990,20 @@ class MultiOpDataPipeline(Pipeline):
     def add_operations(self, operations):
         if len(self.augmentor_images) == 0:
             raise IndexError("First add images so operations can be done per image.")
-        if not(isinstance(operations, list)):
-            raise ValueError('operations must be an array with Operations of length of number of images.')
-        if len(self.operations) == len(self.augmentor_images[0]):
-            raise IndexError("Number of operations must match the number of images. Pad with None to do a no-op for a certain image.")
-        for i, op in enumerate(operations):
-            if not(isinstance(op, Operation) or op is None):
-                optype = type(op)
-                raise ValueError(f'Operation #{i} must be Operation or None but it is {optype}.')
 
-        self.operations.append(operations)
+        if not isinstance(operations, list):
+            raise ValueError('operations must be an array with array or tuple of Operations of length of number of images.')
+        for i, operation_list in enumerate(operations):
+            if len(operations[i]) != len(self.augmentor_images[0]):
+                raise IndexError("Number of operations must match the number of images. Pad with None to do a no-op for a certain image.")
+            for j, op in enumerate(operation_list):
+                if not(isinstance(op, Operation) or op is None):
+                    optype = type(op)
+                    raise ValueError(f'Operation #{i} op #{j} must be Operation or None but it is {optype}.')
+
+            self.operations.append(operation_list)
+
+        print(self.operations)
     ####################################################################################################################
     # End Properties
     ####################################################################################################################
@@ -2028,11 +2032,21 @@ class MultiOpDataPipeline(Pipeline):
                     originals.append([np.asarray(x) for x in images_to_yield].copy())
                 for operations in self.operations:
                     r = round(random.uniform(0, 1), 1)
-                    if r <= operations[0].probability:
+                    firstOp = None
+                    for op in operations:
+                        if op is not None:
+                            firstOp = op
+                            break
+
+                    if firstOp is None:
+                        continue
+                    if r <= firstOp.probability:
+                        state = np.random.get_state()
                         for i, op in enumerate(operations):
                             if op is not None:
+                                np.random.set_state(state)
                                 images_to_yield[i] = operations[i].perform_operation([images_to_yield[i]])[0]
-
+                        np.random.seed()
                 images_to_yield = [np.asarray(x) for x in images_to_yield]
 
                 if self.labels:
@@ -2070,10 +2084,21 @@ class MultiOpDataPipeline(Pipeline):
 
             for operations in self.operations:
                 r = round(random.uniform(0, 1), 1)
-                if r <= operations[0].probability:
+                firstOp = None
+                for op in operations:
+                    if op is not None:
+                        firstOp = op
+                        break
+
+                if firstOp is None:
+                    continue
+                if r <= firstOp.probability:
+                    state = np.random.get_state()
                     for i, op in enumerate(operations):
                         if op is not None:
+                            np.random.set_state(state)
                             images_to_return[i] = operations[i].perform_operation([images_to_return[i]])[0]
+                    np.random.seed()
 
             images_to_return = [np.asarray(x) for x in images_to_return]
 
