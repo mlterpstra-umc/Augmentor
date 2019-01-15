@@ -708,9 +708,31 @@ class Pipeline(object):
                 if r < operation.probability:
                     image = operation.perform_operation([image])[0]
             return image
-
         return _transform
 
+    def torch_multitransform(self):
+        def _multi_transform(tup):
+            ret_tup = []
+            for operations in self.operations:
+                r = round(random.uniform(0, 1), 1)
+                firstOp = None
+                for op in operations:
+                    if op is not None:
+                        firstOp = op
+                        break
+
+                if firstOp is None:
+                    continue
+                if r <= firstOp.probability:
+                    state = np.random.get_state()
+                    for i, op in enumerate(operations):
+                        if op is not None:
+                            np.random.set_state(state)
+                            ret_tup.append(operations[i].perform_operation([tup[i]])[0])
+                    np.random.seed()
+            return ret_tup
+
+        return _multi_transform
     def add_operation(self, operation):
         """
         Add an operation directly to the pipeline. Can be used to add custom
@@ -1941,7 +1963,7 @@ class MultiOpDataPipeline(Pipeline):
     can be 3 channel RGB, while its mask images can be 1 channel monochrome.
     """
 
-    def __init__(self, images, labels=None):
+    def __init__(self, images=[], labels=None):
 
         # We will not use this member variable for now.
         # if output_directory:
@@ -1953,8 +1975,9 @@ class MultiOpDataPipeline(Pipeline):
         self.labels = labels
         self.distinct_dimensions = set()
         self.distinct_formats = set()
-        for i in self.augmentor_images:
-            self.distinct_dimensions.add(i[0].shape)
+        if len(self.augmentor_images) != 0:
+            for i in self.augmentor_images:
+                self.distinct_dimensions.add(i[0].shape)
         self.operations = []
     
     def status(self):
@@ -2049,14 +2072,8 @@ class MultiOpDataPipeline(Pipeline):
         raise NameError("For a MultiOpDataPipeline, use add_operations.")
 
     def add_operations(self, operations):
-        if len(self.augmentor_images) == 0:
-            raise IndexError("First add images so operations can be done per image.")
-
         if not isinstance(operations, list):
             raise ValueError('operations must be an array with array or tuple of Operations of length of number of images.')
-        if not all(len(ops) == len(self.augmentor_images[0]) for ops in operations):
-            raise IndexError("Number of operations must match the number of images. Pad with None to do a no-op for a certain image.")
-
         for i, operation_list in enumerate(operations):
             for j, op in enumerate(operation_list):
                 if not(isinstance(op, Operation) or op is None):
