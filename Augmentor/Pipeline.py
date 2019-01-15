@@ -1993,9 +1993,10 @@ class MultiOpDataPipeline(Pipeline):
 
         if not isinstance(operations, list):
             raise ValueError('operations must be an array with array or tuple of Operations of length of number of images.')
+        if len(operations) != len(self.augmentor_images[0]):
+            raise IndexError("Number of operations must match the number of images. Pad with None to do a no-op for a certain image.")
+
         for i, operation_list in enumerate(operations):
-            if len(operations[i]) != len(self.augmentor_images[0]):
-                raise IndexError("Number of operations must match the number of images. Pad with None to do a no-op for a certain image.")
             for j, op in enumerate(operation_list):
                 if not(isinstance(op, Operation) or op is None):
                     optype = type(op)

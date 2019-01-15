@@ -33,7 +33,6 @@ import numpy as np
 # from skimage import transform
 
 import os
-import random
 import warnings
 
 # Python 2-3 compatibility - not currently needed.
@@ -503,7 +502,7 @@ class Skew(Operation):
 
         max_skew_amount = max(w, h)
         max_skew_amount = int(ceil(max_skew_amount * self.magnitude))
-        skew_amount = random.randint(1, max_skew_amount)
+        skew_amount = np.random.randint(1, max_skew_amount+1)
 
         # Old implementation, remove.
         # if not self.magnitude:
@@ -513,7 +512,7 @@ class Skew(Operation):
         #    skew_amount = max_skew_amount
 
         if self.skew_type == "RANDOM":
-            skew = random.choice(["TILT", "TILT_LEFT_RIGHT", "TILT_TOP_BOTTOM", "CORNER"])
+            skew = np.random.choice(["TILT", "TILT_LEFT_RIGHT", "TILT_TOP_BOTTOM", "CORNER"])
         else:
             skew = self.skew_type
 
@@ -523,11 +522,11 @@ class Skew(Operation):
         if skew == "TILT" or skew == "TILT_LEFT_RIGHT" or skew == "TILT_TOP_BOTTOM":
 
             if skew == "TILT":
-                skew_direction = random.randint(0, 3)
+                skew_direction = np.random.randint(0, 4)
             elif skew == "TILT_LEFT_RIGHT":
-                skew_direction = random.randint(0, 1)
+                skew_direction = np.random.randint(0, 2)
             elif skew == "TILT_TOP_BOTTOM":
-                skew_direction = random.randint(2, 3)
+                skew_direction = np.random.randint(2, 4)
 
             if skew_direction == 0:
                 # Left Tilt
@@ -556,7 +555,7 @@ class Skew(Operation):
 
         if skew == "CORNER":
 
-            skew_direction = random.randint(0, 7)
+            skew_direction = np.random.randint(0, 8)
 
             if skew_direction == 0:
                 # Skew possibility 0
@@ -589,10 +588,10 @@ class Skew(Operation):
             # It may make sense to keep this, if we ensure the skew_amount below is randomised
             # and cannot be manually set by the user.
             corners = dict()
-            corners["top_left"] = (y1 - random.randint(1, skew_amount), x1 - random.randint(1, skew_amount))
-            corners["top_right"] = (y2 + random.randint(1, skew_amount), x1 - random.randint(1, skew_amount))
-            corners["bottom_right"] = (y2 + random.randint(1, skew_amount), x2 + random.randint(1, skew_amount))
-            corners["bottom_left"] = (y1 - random.randint(1, skew_amount), x2 + random.randint(1, skew_amount))
+            corners["top_left"] = (y1 - np.random.randint(1, skew_amount+1), x1 - np.random.randint(1, skew_amount+1))
+            corners["top_right"] = (y2 + np.random.randint(1, skew_amount+1), x1 - np.random.randint(1, skew_amount+1))
+            corners["bottom_right"] = (y2 + np.random.randint(1, skew_amount+1), x2 + np.random.randint(1, skew_amount+1))
+            corners["bottom_left"] = (y1 - np.random.randint(1, skew_amount+1), x2 + np.random.randint(1, skew_amount+1))
 
             new_plane = [corners["top_left"], corners["top_right"], corners["bottom_right"], corners["bottom_left"]]
 
@@ -652,10 +651,10 @@ class RotateStandard(Operation):
          PIL.Image.
         """
 
-        random_left = random.randint(self.max_left_rotation, 0)
-        random_right = random.randint(0, self.max_right_rotation)
+        random_left = np.random.randint(self.max_left_rotation, -1)
+        random_right = np.random.randint(0, self.max_right_rotation+1)
 
-        left_or_right = random.randint(0, 1)
+        left_or_right = np.random.randint(0, 2)
 
         rotation = 0
 
@@ -718,7 +717,7 @@ class Rotate(Operation):
          PIL.Image.
         """
 
-        random_factor = random.randint(1, 3)
+        random_factor = np.random.randint(1, 4)
 
         def do(image):
             if self.rotation == -1:
@@ -794,10 +793,10 @@ class RotateRange(Operation):
         """
 
         # TODO: Small rotations of 1 or 2 degrees can create black pixels
-        random_left = random.randint(self.max_left_rotation, 0)
-        random_right = random.randint(0, self.max_right_rotation)
+        random_left = np.random.randint(self.max_left_rotation, -1)
+        random_right = np.random.randint(0, self.max_right_rotation+1)
 
-        left_or_right = random.randint(0, 1)
+        left_or_right = np.random.randint(0, 2)
 
         rotation = 0
 
@@ -938,7 +937,7 @@ class Flip(Operation):
          PIL.Image.
         """
 
-        random_axis = random.randint(0, 1)
+        random_axis = np.random.randint(0, 2)
 
         def do(image):
             if self.top_bottom_left_right == "LEFT_RIGHT":
@@ -1002,8 +1001,8 @@ class Crop(Operation):
 
         w, h = images[0].size  # All images must be the same size, so we can just check the first image in the list
 
-        left_shift = random.randint(0, int((w - self.width)))
-        down_shift = random.randint(0, int((h - self.height)))
+        left_shift = np.random.randint(0, int((w - self.width))+1)
+        down_shift = np.random.randint(0, int((h - self.height))+1)
 
         def do(image):
 
@@ -1064,7 +1063,7 @@ class CropPercentage(Operation):
         """
 
         if self.randomise_percentage_area:
-            r_percentage_area = round(random.uniform(0.1, self.percentage_area), 2)
+            r_percentage_area = round(np.random.random(0.1, self.percentage_area), 2)
         else:
             r_percentage_area = self.percentage_area
 
@@ -1074,8 +1073,8 @@ class CropPercentage(Operation):
         w_new = int(floor(w * r_percentage_area))  # TODO: Floor might return 0, so we need to check this.
         h_new = int(floor(h * r_percentage_area))
 
-        left_shift = random.randint(0, int((w - w_new)))
-        down_shift = random.randint(0, int((h - h_new)))
+        left_shift = np.random.randint(0, 1+int((w - w_new)))
+        down_shift = np.random.randint(0, 1+int((h - h_new)))
 
         def do(image):
             if self.centre:
@@ -1123,8 +1122,8 @@ class CropRandom(Operation):
         w_new = int(floor(w * self.percentage_area))
         h_new = int(floor(h * self.percentage_area))
 
-        random_left_shift = random.randint(0, int((w - w_new)))  # Note: randint() is from uniform distribution.
-        random_down_shift = random.randint(0, int((h - h_new)))
+        random_left_shift = np.random.randint(0, 1+int((w - w_new)))  # Note: randint() is from uniform distribution.
+        random_down_shift = np.random.randint(0, 1+int((h - h_new)))
 
         def do(image):
             return image.crop((random_left_shift, random_down_shift, w_new + random_left_shift, h_new + random_down_shift))
@@ -1206,7 +1205,7 @@ class Shear(Operation):
         # max_shear_left = 20
         # max_shear_right = 20
 
-        angle_to_shear = int(random.uniform((abs(self.max_shear_left)*-1) - 1, self.max_shear_right + 1))
+        angle_to_shear = int(np.random.random((abs(self.max_shear_left)*-1) - 1, self.max_shear_right + 1))
         if angle_to_shear != -1: angle_to_shear += 1
 
         # Alternative method
@@ -1227,7 +1226,7 @@ class Shear(Operation):
         # https://en.wikipedia.org/wiki/Transformation_matrix#/media/File:2D_affine_transformation_matrix.svg
 
         directions = ["x", "y"]
-        direction = random.choice(directions)
+        direction = np.random.choice(directions)
 
         def do(image):
 
@@ -1454,8 +1453,8 @@ class Distort(Operation):
         def do(image):
 
             for a, b, c, d in polygon_indices:
-                dx = random.randint(-self.magnitude, self.magnitude)
-                dy = random.randint(-self.magnitude, self.magnitude)
+                dx = np.random.randint(-self.magnitude, 1+self.magnitude)
+                dy = np.random.randint(-self.magnitude, 1+self.magnitude)
 
                 x1, y1, x2, y2, x3, y3, x4, y4 = polygons[a]
                 polygons[a] = [x1, y1,
@@ -1731,7 +1730,7 @@ class Zoom(Operation):
         :return: The transformed image(s) as a list of object(s) of type
          PIL.Image.
         """
-        factor = round(random.uniform(self.min_factor, self.max_factor), 2)
+        factor = round(np.random.random(self.min_factor, self.max_factor), 2)
 
         def do(image):
             w, h = image.size
@@ -1794,7 +1793,7 @@ class ZoomRandom(Operation):
         """
 
         if self.randomise:
-            r_percentage_area = round(random.uniform(0.1, self.percentage_area), 2)
+            r_percentage_area = round(np.random.random(0.1, self.percentage_area), 2)
         else:
             r_percentage_area = self.percentage_area
 
@@ -1802,8 +1801,8 @@ class ZoomRandom(Operation):
         w_new = int(floor(w * r_percentage_area))
         h_new = int(floor(h * r_percentage_area))
 
-        random_left_shift = random.randint(0, (w - w_new))  # Note: randint() is from uniform distribution.
-        random_down_shift = random.randint(0, (h - h_new))
+        random_left_shift = np.random.randint(0, 1+(w - w_new))  # Note: randint() is from uniform distribution.
+        random_down_shift = np.random.randint(0, 1+(h - h_new))
 
         def do(image):
             image = image.crop((random_left_shift, random_down_shift, w_new + random_left_shift, h_new + random_down_shift))
@@ -1902,16 +1901,16 @@ class RandomErasing(Operation):
             w_occlusion_min = int(w * 0.1)
             h_occlusion_min = int(h * 0.1)
 
-            w_occlusion = random.randint(w_occlusion_min, w_occlusion_max)
-            h_occlusion = random.randint(h_occlusion_min, h_occlusion_max)
+            w_occlusion = np.random.randint(w_occlusion_min, 1+w_occlusion_max)
+            h_occlusion = np.random.randint(h_occlusion_min, 1+h_occlusion_max)
 
             if len(image.getbands()) == 1:
                 rectangle = Image.fromarray(np.uint8(np.random.rand(w_occlusion, h_occlusion) * 255))
             else:
                 rectangle = Image.fromarray(np.uint8(np.random.rand(w_occlusion, h_occlusion, len(image.getbands())) * 255))
 
-            random_position_x = random.randint(0, w - w_occlusion)
-            random_position_y = random.randint(0, h - h_occlusion)
+            random_position_x = np.random.randint(0, 1+w - w_occlusion)
+            random_position_y = np.random.randint(0, 1+h - h_occlusion)
 
             image.paste(rectangle, (random_position_x, random_position_y))
 
@@ -2006,7 +2005,7 @@ class ZoomGroundTruth(Operation):
         :type images: List containing PIL.Image object(s).
         :return: The zoomed in image(s) as a list of PIL.Image object(s).
         """
-        factor = round(random.uniform(self.min_factor, self.max_factor), 2)
+        factor = round(np.random.random(self.min_factor, self.max_factor), 2)
 
         def do(image):
 
