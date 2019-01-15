@@ -26,7 +26,7 @@ import uuid
 import warnings
 import numpy as np
 from concurrent.futures import ThreadPoolExecutor
-
+from tabulate import tabulate
 # NOTE:
 # https://pypi.org/project/futures/ mentions:
 # The ProcessPoolExecutor class has known (unfixable) problems on Python 2 and
@@ -800,12 +800,13 @@ class Pipeline(object):
 
         print("Images: %s" % len(self.augmentor_images))
 
-        label_pairs = sorted(set([x.label_pair for x in self.augmentor_images]))
+        if all(hasattr(x, 'label_pair') for x in self.augmentor_images):
+            label_pairs = sorted(set([x.label_pair for x in self.augmentor_images]))
 
-        print("Classes: %s" % len(label_pairs))
+            print("Classes: %s" % len(label_pairs))
 
-        for label_pair in label_pairs:
-            print ("\tClass index: %s Class label: %s " % (label_pair[0], label_pair[1]))
+            for label_pair in label_pairs:
+                print ("\tClass index: %s Class label: %s " % (label_pair[0], label_pair[1]))
 
         if len(self.augmentor_images) != 0:
             print("Dimensions: %s" % len(self.distinct_dimensions))
@@ -1950,8 +1951,68 @@ class MultiOpDataPipeline(Pipeline):
 
         self.augmentor_images = images
         self.labels = labels
-
+        self.distinct_dimensions = set()
+        self.distinct_formats = set()
+        for i in self.augmentor_images:
+            self.distinct_dimensions.add(i[0].shape)
         self.operations = []
+    
+    def status(self):
+        """
+        Prints the status of the pipeline to the console. If you want to
+        remove an operation, use the index shown and the
+        :func:`remove_operation` method.
+
+         .. seealso:: The :func:`remove_operation` function.
+
+         .. seealso:: The :func:`add_operation` function.
+
+        The status includes the number of operations currently attached to
+        the pipeline, each operation's parameters, the number of images in the
+        pipeline, and a summary of the images' properties, such as their
+        dimensions and formats.
+
+        :return: None
+        """
+        # TODO: Return this as a dictionary of some kind and print from the dict if in console
+        print("Operations: %s" % len(self.operations))
+
+        if len(self.operations) != 0:
+            operation_index = 0
+            lines = []
+            for operation in self.operations:
+                # print("\t%s: (" % (operation_index), end="")
+                line = [operation_index]
+                for op in operation:
+                    if op is None:
+                        line.append('None')
+                    else:
+                        subline = "%s: " % op
+                        for operation_attribute, operation_value in op.__dict__.items():
+                            subline += "%s=%s " % (operation_attribute, operation_value)
+                        line.append(subline)
+                operation_index += 1
+                lines.append(line)
+            print(tabulate(lines))
+        print("Images: %s" % len(self.augmentor_images))
+
+        if all(hasattr(x, 'label_pair') for x in self.augmentor_images):
+            label_pairs = sorted(set([x.label_pair for x in self.augmentor_images]))
+
+            print("Classes: %s" % len(label_pairs))
+
+            for label_pair in label_pairs:
+                print ("\tClass index: %s Class label: %s " % (label_pair[0], label_pair[1]))
+
+        if len(self.augmentor_images) != 0:
+            print("Dimensions: %s" % len(self.distinct_dimensions))
+            for distinct_dimension in self.distinct_dimensions:
+                print("\tWidth: %s Height: %s" % (distinct_dimension[0], distinct_dimension[1]))
+            print("Formats: %s" % len(self.distinct_formats))
+            for distinct_format in self.distinct_formats:
+                print("\t %s" % distinct_format)
+
+        print("\nYou can remove operations using the appropriate index and the remove_operation(index) function.")
 
     ####################################################################################################################
     # Properties
