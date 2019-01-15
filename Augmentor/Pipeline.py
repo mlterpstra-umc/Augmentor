@@ -712,7 +712,7 @@ class Pipeline(object):
 
     def torch_multitransform(self):
         def _multi_transform(tup):
-            ret_tup = []
+            ret_tup = tup
             for operations in self.operations:
                 r = round(random.uniform(0, 1), 1)
                 firstOp = None
@@ -728,7 +728,7 @@ class Pipeline(object):
                     for i, op in enumerate(operations):
                         if op is not None:
                             np.random.set_state(state)
-                            ret_tup.append(operations[i].perform_operation([tup[i]])[0])
+                            ret_tup[i] = operations[i].perform_operation([ret_tup[i]])[0]
                     np.random.seed()
             return ret_tup
 
