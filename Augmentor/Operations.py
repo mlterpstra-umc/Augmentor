@@ -1063,7 +1063,7 @@ class CropPercentage(Operation):
         """
 
         if self.randomise_percentage_area:
-            r_percentage_area = round(np.random.random(0.1, self.percentage_area), 2)
+            r_percentage_area = round(np.random.uniform(0.1, self.percentage_area), 2)
         else:
             r_percentage_area = self.percentage_area
 
@@ -1205,7 +1205,7 @@ class Shear(Operation):
         # max_shear_left = 20
         # max_shear_right = 20
 
-        angle_to_shear = int(np.random.random((abs(self.max_shear_left)*-1) - 1, self.max_shear_right + 1))
+        angle_to_shear = int(np.random.uniform((abs(self.max_shear_left)*-1) - 1, self.max_shear_right + 1))
         if angle_to_shear != -1: angle_to_shear += 1
 
         # Alternative method
@@ -1730,7 +1730,7 @@ class Zoom(Operation):
         :return: The transformed image(s) as a list of object(s) of type
          PIL.Image.
         """
-        factor = round(np.random.random(self.min_factor, self.max_factor), 2)
+        factor = round(np.random.uniform(self.min_factor, self.max_factor), 2)
 
         def do(image):
             w, h = image.size
@@ -1793,7 +1793,7 @@ class ZoomRandom(Operation):
         """
 
         if self.randomise:
-            r_percentage_area = round(np.random.random(0.1, self.percentage_area), 2)
+            r_percentage_area = round(np.random.uniform(0.1, self.percentage_area), 2)
         else:
             r_percentage_area = self.percentage_area
 
@@ -2005,7 +2005,7 @@ class ZoomGroundTruth(Operation):
         :type images: List containing PIL.Image object(s).
         :return: The zoomed in image(s) as a list of PIL.Image object(s).
         """
-        factor = round(np.random.random(self.min_factor, self.max_factor), 2)
+        factor = round(np.random.uniform(self.min_factor, self.max_factor), 2)
 
         def do(image):
 
