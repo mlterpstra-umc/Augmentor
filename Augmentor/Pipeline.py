@@ -1993,7 +1993,7 @@ class MultiOpDataPipeline(Pipeline):
 
         if not isinstance(operations, list):
             raise ValueError('operations must be an array with array or tuple of Operations of length of number of images.')
-        if len(operations) != len(self.augmentor_images[0]):
+        if not all(len(ops) == len(self.augmentor_images[0]) for ops in operations):
             raise IndexError("Number of operations must match the number of images. Pad with None to do a no-op for a certain image.")
 
         for i, operation_list in enumerate(operations):
